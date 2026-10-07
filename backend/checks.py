@@ -1,6 +1,9 @@
 import platform
 import re
 import subprocess
+import time
+
+import requests
 
 
 def ping_host(host: str, timeout_seconds: int = 2) -> dict:
@@ -37,6 +40,41 @@ def ping_host(host: str, timeout_seconds: int = 2) -> dict:
             latency_ms = float(match.group(1))
 
     return {"host": host, "is_up": is_up, "latency_ms": latency_ms, "error": None}
+
+
+def check_http(url: str, timeout_seconds: int = 5) -> dict:
+    """Request a URL. Return whether it works, its status code, and timing."""
+
+    if not url.startswith(("http://", "https://")):
+        return {"url": url, "is_up": False, "status_code": None,
+                "response_time_ms": None,
+                "error": "URL must start with http:// or https://"}
+
+    start = time.perf_counter()
+    try:
+        response = requests.get(url, timeout=timeout_seconds)
+    except requests.exceptions.SSLError:
+        return {"url": url, "is_up": False, "status_code": None,
+                "response_time_ms": None, "error": "SSL certificate problem"}
+    except requests.exceptions.Timeout:
+        return {"url": url, "is_up": False, "status_code": None,
+                "response_time_ms": None, "error": "Request timed out"}
+    except requests.exceptions.ConnectionError:
+        return {"url": url, "is_up": False, "status_code": None,
+                "response_time_ms": None, "error": "Could not connect"}
+    except requests.exceptions.RequestException as exc:
+        return {"url": url, "is_up": False, "status_code": None,
+                "response_time_ms": None, "error": str(exc)}
+
+    elapsed_ms = round((time.perf_counter() - start) * 1000, 1)
+
+    return {
+        "url": url,
+        "is_up": response.status_code < 400,
+        "status_code": response.status_code,
+        "response_time_ms": elapsed_ms,
+        "error": None,
+    }
 
 
 if __name__ == "__main__":
