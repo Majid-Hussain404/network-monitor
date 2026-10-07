@@ -4,6 +4,7 @@ import socket
 import subprocess
 import time
 
+import psutil
 import requests
 
 
@@ -114,6 +115,20 @@ def check_port(host: str, port: int, timeout_seconds: int = 3) -> dict:
     elapsed_ms = round((time.perf_counter() - start) * 1000, 1)
     return {"host": host, "port": port, "is_open": True,
             "state": "open", "connect_time_ms": elapsed_ms, "error": None}
+def get_system_metrics() -> dict:
+    """Read CPU and memory usage of the machine this program runs on."""
+
+    # interval=1 means: measure CPU activity over 1 second.
+    cpu_percent = psutil.cpu_percent(interval=1)
+
+    memory = psutil.virtual_memory()
+
+    return {
+        "cpu_percent": cpu_percent,
+        "memory_percent": memory.percent,
+        "memory_used_mb": round(memory.used / (1024 * 1024)),
+        "memory_total_mb": round(memory.total / (1024 * 1024)),
+    }
 
 if __name__ == "__main__":
     # This part runs only when we start this file directly, to test it.
