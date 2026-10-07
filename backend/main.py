@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from backend.checks import check_http, ping_host
+from backend.checks import check_http, check_port, ping_host
 
 app = FastAPI()
 
@@ -18,3 +18,8 @@ def ping(host: str):
 @app.get("/http-check")
 def http_check(url: str):
     return check_http(url)
+
+
+@app.get("/port-check")
+def port_check(host: str, port: int):
+    return check_port(host, port)

@@ -1,5 +1,6 @@
 import platform
 import re
+import socket
 import subprocess
 import time
 
@@ -76,6 +77,43 @@ def check_http(url: str, timeout_seconds: int = 5) -> dict:
         "error": None,
     }
 
+def check_port(host: str, port: int, timeout_seconds: int = 3) -> dict:
+    """Try a TCP connection to host:port. Report open, closed or filtered."""
+
+    if not re.fullmatch(r"[A-Za-z0-9.\-]+", host) or host.startswith("-"):
+        return {"host": host, "port": port, "is_open": False,
+                "state": "invalid", "connect_time_ms": None,
+                "error": "Invalid host name"}
+
+    if not 1 <= port <= 65535:
+        return {"host": host, "port": port, "is_open": False,
+                "state": "invalid", "connect_time_ms": None,
+                "error": "Port must be between 1 and 65535"}
+
+    start = time.perf_counter()
+    try:
+        connection = socket.create_connection((host, port), timeout=timeout_seconds)
+        connection.close()
+    except ConnectionRefusedError:
+        return {"host": host, "port": port, "is_open": False,
+                "state": "closed", "connect_time_ms": None,
+                "error": "Connection refused"}
+    except (socket.timeout, TimeoutError):
+        return {"host": host, "port": port, "is_open": False,
+                "state": "filtered", "connect_time_ms": None,
+                "error": "No response (timed out)"}
+    except socket.gaierror:
+        return {"host": host, "port": port, "is_open": False,
+                "state": "unreachable", "connect_time_ms": None,
+                "error": "Host name could not be resolved"}
+    except OSError as exc:
+        return {"host": host, "port": port, "is_open": False,
+                "state": "unreachable", "connect_time_ms": None,
+                "error": str(exc)}
+
+    elapsed_ms = round((time.perf_counter() - start) * 1000, 1)
+    return {"host": host, "port": port, "is_open": True,
+            "state": "open", "connect_time_ms": elapsed_ms, "error": None}
 
 if __name__ == "__main__":
     # This part runs only when we start this file directly, to test it.
