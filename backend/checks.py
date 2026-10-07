@@ -129,6 +129,25 @@ def get_system_metrics() -> dict:
         "memory_used_mb": round(memory.used / (1024 * 1024)),
         "memory_total_mb": round(memory.total / (1024 * 1024)),
     }
+def get_network_stats() -> dict:
+    """Measure network traffic speed over one second."""
+
+    before = psutil.net_io_counters()
+    time.sleep(1)
+    after = psutil.net_io_counters()
+
+    return {
+        "upload_kb_per_sec": round((after.bytes_sent - before.bytes_sent) / 1024, 1),
+        "download_kb_per_sec": round((after.bytes_recv - before.bytes_recv) / 1024, 1),
+        "total_sent_mb": round(after.bytes_sent / (1024 * 1024), 1),
+        "total_received_mb": round(after.bytes_recv / (1024 * 1024), 1),
+        "packets_sent": after.packets_sent,
+        "packets_received": after.packets_recv,
+        "errors_in": after.errin,
+        "errors_out": after.errout,
+        "dropped_in": after.dropin,
+        "dropped_out": after.dropout,
+    }
 
 if __name__ == "__main__":
     # This part runs only when we start this file directly, to test it.

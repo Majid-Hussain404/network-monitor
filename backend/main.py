@@ -1,6 +1,12 @@
 from fastapi import FastAPI
 
-from backend.checks import check_http, check_port, get_system_metrics, ping_host
+from backend.checks import (
+    check_http,
+    check_port,
+    get_network_stats,
+    get_system_metrics,
+    ping_host,
+)
 
 app = FastAPI()
 
@@ -28,3 +34,8 @@ def port_check(host: str, port: int):
 @app.get("/system")
 def system():
     return get_system_metrics()
+
+
+@app.get("/network")
+def network():
+    return get_network_stats()
